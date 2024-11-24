@@ -8,7 +8,7 @@ import logging
 class MongoDBHandler:
     def __init__(self, config: MongoDBConfig):
         self.config = config
-        self.client = MongoClient(**config.get_connection_params)
+        self.client = MongoClient(config.host, config.port)
         self.db = self.client[config.database]
         self.logger = logging.getLogger(__name__)
 
