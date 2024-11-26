@@ -1,9 +1,11 @@
+dataclasses
+typing
 pandas
 beautifulsoup4
 requests
 pymongo
 pydantic
-typing
-kafka-python3
-logging
-python-dotenv
+kafka-python
+pyspark
+kafka-python-ng
+six

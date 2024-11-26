@@ -3,13 +3,18 @@ import uuid
 from datetime import datetime
 import logging
 from storage.mongodb_handler import MongoDBHandler
+from storage.kafka_handler import KafkaHandler
 from models.comment import Comment
+from config.kafka_config import KafkaConfig
 from utils.scrapper import HespressCommentsScraper
 
 
 class BatchProcessor:
-    def __init__(self, mongodb_handler: MongoDBHandler):
+    def __init__(self,
+                 mongodb_handler: MongoDBHandler,
+                 kafka_handler: KafkaHandler):
         self.mongodb_handler = mongodb_handler
+        self.kafka_handler = kafka_handler
         self.scraper = HespressCommentsScraper()
         self.logger = logging.getLogger(__name__)
 
@@ -21,8 +26,9 @@ class BatchProcessor:
             # Fetch comments using existing scraper
             df = self.scraper.fetch_comments(urls, save_to_csv=False)
 
-            # Convert to Comment models
+            # Convert to Comment models and prepare for Kafka
             comments = []
+            kafka_messages = []
             for _, row in df.iterrows():
                 comment = Comment(
                     user_name=row['User Name'],
@@ -35,8 +41,14 @@ class BatchProcessor:
                 )
                 comments.append(comment)
 
+                # Prepare Kafka message
+                kafka_messages.append(comment.dict())
+
             # Save to MongoDB
             self.mongodb_handler.save_batch(comments, batch_id)
+
+            # Send to Kafka
+            self.kafka_handler.send_comments(kafka_messages)
 
             # Update merged view
             self.mongodb_handler.update_merged_view()
