@@ -8,4 +8,7 @@ pydantic
 kafka-python
 pyspark
 kafka-python-ng
+tensorflow
+joblib
+scikit-learn
 six
