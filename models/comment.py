@@ -12,3 +12,4 @@ class Comment(BaseModel):
     article_title: str
     batch_id: Optional[str] = None
     processing_timestamp: datetime = datetime.now()
+    sentiment: Optional[str] = None
