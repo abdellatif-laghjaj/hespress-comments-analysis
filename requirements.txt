@@ -12,3 +12,4 @@ tensorflow
 joblib
 scikit-learn
 six
+numpy
