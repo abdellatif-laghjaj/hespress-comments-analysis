@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Comment(BaseModel):
@@ -11,5 +11,5 @@ class Comment(BaseModel):
     article_url: str
     article_title: str
     batch_id: Optional[str] = None
-    processing_timestamp: datetime = datetime.now()
+    processing_timestamp: datetime = Field(default_factory=datetime.now)
     sentiment: Optional[str] = None
