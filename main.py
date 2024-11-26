@@ -1,22 +1,55 @@
 import logging
+import threading
 from config.mongodb_config import MongoDBConfig
+from config.kafka_config import KafkaConfig
 from storage.mongodb_handler import MongoDBHandler
+from storage.kafka_handler import KafkaHandler
 from processors.batch_processor import BatchProcessor
+from processors.spark_processor import SparkKafkaProcessor
+import six
+import sys
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+if sys.version_info >= (3, 12, 0):
+    sys.modules['kafka.vendor.six.moves'] = six.moves
+
+
+def start_spark_processor(mongodb_config):
+    """
+    Start Spark Kafka processor in a separate thread
+    """
+    spark_processor = SparkKafkaProcessor(mongodb_config)
+    spark_processor.process_kafka_stream(
+        kafka_bootstrap_servers='localhost:9092',
+        topic='hespress_comments'
+    )
+
 
 def main():
     # Initialize configurations
     mongodb_config = MongoDBConfig()
+    kafka_config = KafkaConfig()
+    print("mongodb_config", mongodb_config)
 
     # Initialize handlers
     mongodb_handler = MongoDBHandler(mongodb_config)
+    kafka_handler = KafkaHandler(kafka_config)
+
+    # Start Spark Processor in a separate thread
+    spark_thread = threading.Thread(
+        target=start_spark_processor,
+        args=(mongodb_config,)
+    )
+    spark_thread.start()
 
     # Initialize processors
-    batch_processor = BatchProcessor(mongodb_handler)
+    batch_processor = BatchProcessor(
+        mongodb_handler,
+        kafka_handler
+    )
 
     # Example URLs to process
     urls = [
@@ -32,7 +65,3 @@ def main():
         logger.info(f"Successfully processed batch {batch_id}")
     except Exception as e:
         logger.error(f"Error in main process: {str(e)}")
-
-
-if __name__ == "__main__":
-    main()
