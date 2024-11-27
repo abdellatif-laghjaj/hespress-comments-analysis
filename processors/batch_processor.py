@@ -4,18 +4,26 @@ from datetime import datetime
 import logging
 from storage.mongodb_handler import MongoDBHandler
 from storage.kafka_handler import KafkaHandler
-from models.comment import Comment
-from config.kafka_config import KafkaConfig
 from utils.scrapper import HespressCommentsScraper
+from models.comment import Comment
+from utils.sentiments_processor import SentimentProcessor
 
 
 class BatchProcessor:
-    def __init__(self,
-                 mongodb_handler: MongoDBHandler,
-                 kafka_handler: KafkaHandler):
+    def __init__(
+            self,
+            mongodb_handler: MongoDBHandler,
+            kafka_handler: KafkaHandler,
+            sentiment_processor: SentimentProcessor = None
+    ):
         self.mongodb_handler = mongodb_handler
         self.kafka_handler = kafka_handler
         self.scraper = HespressCommentsScraper()
+        self.sentiment_processor = sentiment_processor or SentimentProcessor(
+            model_path="model/sentiment_model.h5",
+            tokenizer_path="model/tokenizer.json",
+            label_encoder_path="model/label_encoder.pkl"
+        )
         self.logger = logging.getLogger(__name__)
 
     def process_urls(self, urls: List[str]):
@@ -25,6 +33,18 @@ class BatchProcessor:
         try:
             # Fetch comments using existing scraper
             df = self.scraper.fetch_comments(urls, save_to_csv=False)
+
+            # Predict sentiments
+            sentiments = self.sentiment_processor.predict(
+                df['Comment'].tolist()
+            )
+
+            # Convert numerical sentiments to string labels
+            sentiment_mapping = {-1: "negative", 0: "neutral", 1: "positive"}  # Define your mapping
+            string_sentiments = [sentiment_mapping.get(s, "unknown") for s in sentiments]  # Handle unknown values
+
+            # Add sentiment column
+            df['Sentiment'] = string_sentiments
 
             # Convert to Comment models and prepare for Kafka
             comments = []
@@ -37,11 +57,10 @@ class BatchProcessor:
                     likes=row['Likes'],
                     article_url=row['Article URL'],
                     article_title=row['Article Title'],
+                    sentiment=row['Sentiment'],
                     batch_id=batch_id
                 )
                 comments.append(comment)
-
-                # Prepare Kafka message
                 kafka_messages.append(comment.dict())
 
             # Save to MongoDB
