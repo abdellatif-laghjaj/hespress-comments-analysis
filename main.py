@@ -1,14 +1,12 @@
 import logging
-import threading
+from storage.hdfs_handler import HDFSHandler
 from config.mongodb_config import MongoDBConfig
 from config.kafka_config import KafkaConfig
 from storage.mongodb_handler import MongoDBHandler
 from storage.kafka_handler import KafkaHandler
 from processors.batch_processor import BatchProcessor
-from processors.spark_processor import SparkKafkaProcessor
 import six
 import sys
-import traceback
 
 from utils.sentiments_processor import SentimentProcessor
 
@@ -34,6 +32,7 @@ def main():
         # Initialize configurations
         mongodb_config = MongoDBConfig()
         kafka_config = KafkaConfig()
+        hdfs_handler = HDFSHandler(host="localhost", port=9870)
 
         # Initialize sentiment processor
         sentiment_processor = SentimentProcessor(
@@ -50,6 +49,7 @@ def main():
         batch_processor = BatchProcessor(
             mongodb_handler,
             kafka_handler,
+            hdfs_handler,
             sentiment_processor
         )
 
