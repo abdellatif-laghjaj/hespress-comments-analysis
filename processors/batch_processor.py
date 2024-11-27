@@ -2,9 +2,11 @@ from typing import List
 import uuid
 from datetime import datetime
 import logging
+import pandas as pd
 from storage.mongodb_handler import MongoDBHandler
 from storage.kafka_handler import KafkaHandler
 from utils.scrapper import HespressCommentsScraper
+from storage.hdfs_handler import HDFSHandler
 from models.comment import Comment
 from utils.sentiments_processor import SentimentProcessor
 
@@ -14,9 +16,11 @@ class BatchProcessor:
             self,
             mongodb_handler: MongoDBHandler,
             kafka_handler: KafkaHandler,
+            hdfs_handler: HDFSHandler,
             sentiment_processor: SentimentProcessor = None
     ):
         self.mongodb_handler = mongodb_handler
+        self.hdfs_handler = hdfs_handler
         self.kafka_handler = kafka_handler
         self.scraper = HespressCommentsScraper()
         self.sentiment_processor = sentiment_processor or SentimentProcessor(
@@ -53,7 +57,7 @@ class BatchProcessor:
                 comment = Comment(
                     user_name=row['User Name'],
                     comment_text=row['Comment'],
-                    date=row['Date'],
+                    date=row['Date'].isoformat() if pd.notna(row['Date']) else None,  # Convert to ISO string
                     likes=row['Likes'],
                     article_url=row['Article URL'],
                     article_title=row['Article Title'],
@@ -63,8 +67,12 @@ class BatchProcessor:
                 comments.append(comment)
                 kafka_messages.append(comment.dict())
 
-            # Save to MongoDB
-            self.mongodb_handler.save_batch(comments, batch_id)
+            hdfs_path = f"/hespress_comments/batch_{batch_id}.json"
+            self.hdfs_handler.save_to_hdfs(kafka_messages, hdfs_path)
+
+            # Read back from HDFS
+            comments_from_hdfs = self.hdfs_handler.read_from_hdfs(hdfs_path)
+            self.mongodb_handler.save_batch([Comment(**c) for c in comments_from_hdfs], batch_id)
 
             # Send to Kafka
             self.kafka_handler.send_comments(kafka_messages)
