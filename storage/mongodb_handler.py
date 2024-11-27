@@ -18,6 +18,7 @@ class MongoDBHandler:
             for comment in comments_dict:
                 comment['batch_id'] = batch_id
 
+            # Ensure sentiment is saved (even if it's None)
             self.db[self.config.batch_collection].insert_many(comments_dict)
             self.logger.info(f"Saved {len(comments)} comments in batch {batch_id}")
         except Exception as e:
@@ -25,6 +26,7 @@ class MongoDBHandler:
             raise
 
     def update_merged_view(self):
+        # Same as before, but now includes sentiment in the merge
         pipeline = [
             {
                 '$unionWith': {
