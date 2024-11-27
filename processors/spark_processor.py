@@ -1,42 +1,46 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType
-from storage.mongodb_handler import MongoDBHandler
-from config.mongodb_config import MongoDBConfig
+from pyspark.sql.functions import col, udf
+from pyspark.sql.types import StringType
 import logging
+import traceback
+from utils.sentiments_processor import SentimentProcessor
 
 
 class SparkKafkaProcessor:
-    def __init__(self, mongodb_config: MongoDBConfig):
+    def __init__(self, mongodb_config):
         self.logger = logging.getLogger(__name__)
         self.mongodb_config = mongodb_config
+        self.sentiment_processor = SentimentProcessor()
 
-        # Initialize Spark Session
-        self.spark = SparkSession.builder \
-            .appName("HespressCommentsProcessor") \
-            .config("spark.mongodb.output.uri",
-                    f"mongodb://{mongodb_config.host}:{mongodb_config.port}/{mongodb_config.database}.{mongodb_config.realtime_collection}") \
-            .config("spark.jars.packages",
-                    "org.mongodb.spark:mongo-spark-connector_2.12:3.0.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2") \
-            .getOrCreate()
+        try:
+            # Initialize Spark Session with detailed configuration
+            self.spark = SparkSession.builder \
+                .appName("HespressCommentsProcessor") \
+                .config("spark.master", "local[*]") \
+                .config("spark.mongodb.output.uri",
+                        f"mongodb://{mongodb_config.host}:{mongodb_config.port}/{mongodb_config.database}.{mongodb_config.realtime_collection}") \
+                .config("spark.jars.packages",
+                        "org.mongodb.spark:mongo-spark-connector_2.12:3.0.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2") \
+                .getOrCreate()
 
-        # Define comment schema
-        self.comment_schema = StructType([
-            StructField("user_name", StringType(), True),
-            StructField("comment_text", StringType(), True),
-            StructField("date", TimestampType(), True),
-            StructField("likes", IntegerType(), True),
-            StructField("article_url", StringType(), True),
-            StructField("article_title", StringType(), True),
-            StructField("batch_id", StringType(), True),
-            StructField("processing_timestamp", TimestampType(), True)
-        ])
+            # Define UDF for sentiment prediction
+            @udf(returnType=StringType())
+            def predict_sentiment(comment):
+                return self.sentiment_processor.predict(comment)
+
+            self.predict_sentiment = predict_sentiment
+
+            self.logger.info("Spark Session initialized successfully")
+
+        except Exception as e:
+            self.logger.error(f"Error initializing Spark Session: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            raise
 
     def process_kafka_stream(self, kafka_bootstrap_servers: str, topic: str):
-        """
-        Process Kafka stream and write to MongoDB
-        """
         try:
+            self.logger.info(f"Starting Kafka stream processing for topic: {topic}")
+
             # Read from Kafka
             df = self.spark \
                 .readStream \
@@ -45,23 +49,24 @@ class SparkKafkaProcessor:
                 .option("subscribe", topic) \
                 .load()
 
-            # Parse the value
-            parsed_df = df.select(
-                from_json(col("value").cast("string"), self.comment_schema).alias("comment")
-            ).select("comment.*")
+            # Process and add sentiment
+            processed_df = df \
+                .withColumn("sentiment", self.predict_sentiment(col("value"))) \
+                .select("*")  # Modify as needed
 
-            # Write to MongoDB using streaming
-            query = parsed_df \
+            # Write to MongoDB
+            query = processed_df \
                 .writeStream \
+                .outputMode("append") \
                 .format("mongodb") \
                 .option("checkpointLocation", "/tmp/checkpoint") \
-                .option("forceInsert", "true") \
+                .option("spark.mongodb.output.uri",
+                        f"mongodb://{self.mongodb_config.host}:{self.mongodb_config.port}/{self.mongodb_config.database}.{self.mongodb_config.realtime_collection}") \
                 .start()
 
-            # Await termination
+            self.logger.info("Kafka stream processing started")
             query.awaitTermination()
 
         except Exception as e:
             self.logger.error(f"Error processing Kafka stream: {str(e)}")
-        finally:
-            self.spark.stop()
+            self.logger.error(traceback.format_exc())
