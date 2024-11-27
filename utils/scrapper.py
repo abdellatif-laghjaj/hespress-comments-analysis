@@ -43,7 +43,7 @@ class HespressCommentsScraper:
         """Convert Arabic month name to English."""
         return self.months_mapping.get(arabic_month, 'Unknown')
 
-    def _parse_date(self, date_string: str) -> pd.Timestamp:
+    def _parse_date(self, date_string: str) -> Union[datetime, None]:
         """Parse date string into pandas Timestamp."""
         try:
             date_parts = date_string.strip().split()
@@ -53,9 +53,9 @@ class HespressCommentsScraper:
             time_parts = date_parts[-1].split(':')
             hour = int(time_parts[0])
             minute = int(time_parts[1])
-            return pd.Timestamp(year, datetime.strptime(month, '%B').month, day, hour, minute)
+            return datetime(year, datetime.strptime(month, '%B').month, day, hour, minute)
         except (ValueError, IndexError) as e:
-            self.logger.error(f"Error parsing date: {date_string}. Error: {str(e)}")
+            self.logger.warning(f"Error parsing date: {date_string}. Error: {str(e)}. Returning None.")
             return pd.NaT
 
     def _fetch_single_article(self, url: str) -> Tuple[pd.DataFrame, str]:
