@@ -117,7 +117,16 @@ sudo systemctl start mongod
 start-all.sh
 ```
 
-4. **Run the main application:**
+4. **Create Kafka Topic:** Create a Kafka topic to store the comments.
+
+```bash
+kafka-topics.sh 
+  --create --topic hespress_comments \
+  --bootstrap-server localhost:9092 \
+  --partitions 1 --replication-factor 1
+```
+
+5. **Run the main application:**
 
 ```bash
 python main.py
