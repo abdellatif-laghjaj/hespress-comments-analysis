@@ -35,10 +35,16 @@ class BatchProcessor:
         self.logger.info(f"Starting batch processing with ID: {batch_id}")
 
         try:
-            # Fetch comments using existing scraper
-            df = self.scraper.fetch_comments(urls, save_to_csv=False)
+            # Get existing comment IDs before scraping
+            existing_comment_ids = self.mongodb_handler.get_existing_comment_ids()
 
-            # Predict sentiments
+            df = self.scraper.fetch_comments(urls, existing_comment_ids)
+
+            if df.empty:  # Check if the DataFrame is empty
+                self.logger.info("No new comments found.")
+                return None  # Or handle it differently as needed
+
+            # Predict sentiments (only if df is not empty)
             sentiments = self.sentiment_processor.predict(
                 df['Comment'].tolist()
             )
@@ -62,7 +68,8 @@ class BatchProcessor:
                     article_url=row['Article URL'],
                     article_title=row['Article Title'],
                     sentiment=row['Sentiment'],
-                    batch_id=batch_id
+                    batch_id=batch_id,
+                    comment_id=row['comment_id'],
                 )
                 comments.append(comment)
                 kafka_messages.append(comment.dict())
