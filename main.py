@@ -71,8 +71,8 @@ def main():
             "https://www.hespress.com/%d8%a7%d9%84%d9%85%d9%84%d9%83-%d9%8a%d8%b7%d8%a7%d9%84%d8%a8-%d8%a8%d8%a7%d9%84%d8%aa%d8%ad%d8%b1%d9%83-%d8%a7%d9%84%d8%b9%d8%a7%d8%ac%d9%84-%d9%88%d8%a7%d9%84%d9%81%d9%88%d8%b1%d9%8a-%d9%84%d9%88-1471217.html",
         ]
 
-        # Schedule the batch processing job (e.g., every minute)
-        schedule.every().minute.do(scheduled_batch_process, batch_processor, urls)
+        # Schedule the batch processing job (e.g., every hour)
+        schedule.every().hour.do(scheduled_batch_process, batch_processor, urls)
 
         # Keep the application running and check for scheduled jobs
         while True:
