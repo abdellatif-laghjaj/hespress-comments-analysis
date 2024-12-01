@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class Comment(BaseModel):
+    comment_id: str
     user_name: str
     comment_text: str
     date: str
