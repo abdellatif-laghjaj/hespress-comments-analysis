@@ -56,3 +56,13 @@ class MongoDBHandler:
         except Exception as e:
             self.logger.error(f"Error updating merged view: {str(e)}")
             raise
+
+    def get_existing_comment_ids(self):
+        """Retrieves a set of existing comment IDs from MongoDB."""
+        try:
+            comment_ids = set(self.db[self.config.batch_collection].distinct('comment_id')) | \
+                          set(self.db[self.config.realtime_collection].distinct('comment_id'))
+            return comment_ids
+        except Exception as e:
+            self.logger.error(f"Error retrieving existing comment IDs: {str(e)}")
+            return set()  # Return empty set if there's an error
