@@ -50,6 +50,7 @@ hespress-comments-analysis/
 │   ├── sentiment_model.h5
 │   ├── tokenizer.json
 │   └── label_encoder.pkl
+├── dashboard/          # Flask dashboard
 └── main.py             # Main application entry point
 └── requirements.txt    # Project dependencies
 └── README.md           # This file
@@ -65,6 +66,7 @@ hespress-comments-analysis/
 * **Apache Kafka:** Install and configure Kafka.
 * **Apache Spark:** Install and configure Spark.
 * **MongoDB:** Install and run MongoDB.
+* **Flask:** Install Flask for the dashboard.
 
 ### Installation
 
