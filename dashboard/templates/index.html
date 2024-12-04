@@ -12,12 +12,19 @@
 <div class="max-w-6xl mx-auto p-6 bg-white shadow-md rounded-lg">
     <h1 class="text-2xl font-bold mb-4">Hespress Comments Analysis</h1>
 
-    <form action="/analyze" method="POST" class="mb-6">
+    <form id="analyze-form" class="mb-6">
         <input
                 type="text"
-                placeholder="HERE THE ARTICLE LINK"
+                id="url-input"
+                placeholder="Enter Hespress Article Link"
                 class="border rounded-lg w-full p-2"
         />
+        <button
+                type="submit"
+                class="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+        >
+            Analyze
+        </button>
     </form>
 
     <div class="grid grid-cols-4 gap-4 mb-6">
@@ -130,6 +137,36 @@
 <script src="/static/app.js"></script>
 
 <script>
+    document.getElementById('analyze-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const urlInput = document.getElementById('url-input');
+        const url = urlInput.value.trim();
+
+        if (url) {
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `url=${encodeURIComponent(url)}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('URL submitted for processing');
+                        urlInput.value = ''; // Clear the input
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred');
+                });
+        }
+    });
+
     function filterComments(sentiment) {
         const comments = document.querySelectorAll(".comment");
         comments.forEach((comment) => {
