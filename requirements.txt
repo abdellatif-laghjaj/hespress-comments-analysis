@@ -18,3 +18,5 @@ pyarrow
 grpcio-status
 hdfs
 schedule
+flask
+flask-pymongo
