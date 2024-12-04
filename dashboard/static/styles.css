@@ -1,0 +1,67 @@
+
+    /* Tailwind CSS custom RTL support */
+    .rtl {
+        direction: rtl;
+        text-align: right;
+    }
+
+    /* Styling for the comments container */
+    #comments-container {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr); /* Default single column */
+        gap: 1.5rem;
+    }
+
+    /* Styling for individual comment boxes */
+    .comment {
+        background-color: #f9fafb;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Two columns */
+        gap: 1.5rem;
+    }
+
+    /* Styling for left and right columns */
+    .comment .flex {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Author and comment on the right */
+    .comment .items-end {
+        text-align: right;
+    }
+
+    /* Date, likes, and sentiment on the left */
+    .comment .items-start {
+        text-align: left;
+    }
+
+    /* Styling for sentiment color */
+    .comment p.sentiment-positive {
+        color: green;
+    }
+
+    .comment p.sentiment-negative {
+        color: red;
+    }
+
+    .comment p.sentiment-neutral {
+        color: orange;
+    }
+
+    /* Responsiveness */
+    @media (min-width: 768px) {
+        #comments-container {
+            grid-template-columns: repeat(1, 1fr); /* Still single column on medium screens */
+        }
+    }
+
+    @media (min-width: 1024px) {
+        #comments-container {
+            grid-template-columns: repeat(1, 1fr); /* Still single column on larger screens */
+        }
+    }
