@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_pymongo import PyMongo
 from collections import Counter
 from datetime import datetime
@@ -8,6 +8,34 @@ app = Flask(__name__)
 # MongoDB configuration
 app.config["MONGO_URI"] = "mongodb://localhost:27017/hespress_comments"
 mongo = PyMongo(app)
+
+# Global variable to store the current URL
+current_url = None
+
+
+@app.route('/api/url', methods=['GET'])
+def get_current_url():
+    global current_url
+    return jsonify({'url': current_url})
+
+
+@app.route('/analyze', methods=['POST'])
+def analyze_url():
+    global current_url
+
+    # Get the URL from the form submission
+    url = request.form.get('url', '').strip()
+
+    if not url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    # Store the URL in the global variable
+    current_url = url
+
+    return jsonify({
+        "status": "success",
+        "message": f"URL {url} has been queued for processing"
+    }), 200
 
 
 @app.route('/')
