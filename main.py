@@ -2,6 +2,7 @@ import logging
 import schedule
 import time
 import traceback
+import requests
 from storage.hdfs_handler import HDFSHandler
 from config.mongodb_config import MongoDBConfig
 from config.kafka_config import KafkaConfig
@@ -71,8 +72,23 @@ def main():
             "https://www.hespress.com/%d8%a7%d9%84%d9%85%d9%84%d9%83-%d9%8a%d8%b7%d8%a7%d9%84%d8%a8-%d8%a8%d8%a7%d9%84%d8%aa%d8%ad%d8%b1%d9%83-%d8%a7%d9%84%d8%b9%d8%a7%d8%ac%d9%84-%d9%88%d8%a7%d9%84%d9%81%d9%88%d8%b1%d9%8a-%d9%84%d9%88-1471217.html",
         ]
 
-        # Schedule the batch processing job (e.g., every hour)
-        schedule.every().hour.do(scheduled_batch_process, batch_processor, urls)
+        # Modify the scheduled processing to use the API endpoint
+        def scheduled_batch_process_with_dynamic_url(batch_processor):
+            # Get the current URL from the API endpoint
+            response = requests.get('http://localhost:5000/api/url')
+            current_url = response.json().get('url')
+
+            if current_url:
+                try:
+                    logger.info(f"Processing URL: {current_url}")
+                    batch_processor.process_urls([current_url])
+                except Exception as e:
+                    logger.error(f"Error processing URL {current_url}: {str(e)}")
+            else:
+                logger.info("No URL set for processing")
+
+        # Schedule the batch processing job
+        schedule.every().minute.do(scheduled_batch_process_with_dynamic_url, batch_processor)
 
         # Keep the application running and check for scheduled jobs
         while True:
@@ -81,7 +97,7 @@ def main():
 
     except Exception as e:
         logger.error(f"Critical error in main process: {str(e)}")
-        logger.error(traceback.format_exc())
+        logger.error(traceback.format_exc())  # Include traceback for detailed error info
 
 
 if __name__ == "__main__":
