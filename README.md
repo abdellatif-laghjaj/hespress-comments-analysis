@@ -3,6 +3,12 @@
 This project performs sentiment analysis on comments scraped from Hespress articles. It uses a big data pipeline
 consisting of Apache Kafka, Apache Spark, HDFS, and MongoDB to process and store the data.
 
+## Contributers
+
+- **LAGHAJ ABDELLATIF:** https://github.com/abdellatif-laghjaj
+- **EL BETTIOUI REDA:** https://github.com/XredaX
+- **Adriouich abdelilah:** https://github.com/isMeXar
+
 ## Architecture
 
 The project follows a hybrid batch and real-time processing architecture:
@@ -12,15 +18,17 @@ The project follows a hybrid batch and real-time processing architecture:
 2. **Data Ingestion (Kafka):** Scraped comments are streamed into a Kafka topic.
 
 3. **Batch Processing (Spark):**
-    - Spark reads comments from the Kafka topic in batches.
-    - Preprocessing steps (cleaning, normalization) are applied.
-    - Sentiment is predicted using a pre-trained deep learning model.
-    - Processed comments, including sentiment, are stored in MongoDB.
+
+   - Spark reads comments from the Kafka topic in batches.
+   - Preprocessing steps (cleaning, normalization) are applied.
+   - Sentiment is predicted using a pre-trained deep learning model.
+   - Processed comments, including sentiment, are stored in MongoDB.
 
 4. **Real-time Processing (Spark Streaming):**
-    - Spark Streaming consumes comments from the same Kafka topic in real time.
-    - Preprocessing and sentiment prediction are performed similarly to the batch layer.
-    - Real-time sentiment results are stored in MongoDB.
+
+   - Spark Streaming consumes comments from the same Kafka topic in real time.
+   - Preprocessing and sentiment prediction are performed similarly to the batch layer.
+   - Real-time sentiment results are stored in MongoDB.
 
 5. **Storage (MongoDB):** MongoDB stores both batch and real-time processed comments.
 
@@ -60,29 +68,32 @@ hespress-comments-analysis/
 
 ### Prerequisites
 
-* **Python 3.7+:** Make sure you have a compatible Python version installed.
-* **Java:** Required for Kafka and Spark.
-* **Hadoop and HDFS:** Install and configure Hadoop and HDFS.
-* **Apache Kafka:** Install and configure Kafka.
-* **Apache Spark:** Install and configure Spark.
-* **MongoDB:** Install and run MongoDB.
-* **Flask:** Install Flask for the dashboard.
+- **Python 3.7+:** Make sure you have a compatible Python version installed.
+- **Java:** Required for Kafka and Spark.
+- **Hadoop and HDFS:** Install and configure Hadoop and HDFS.
+- **Apache Kafka:** Install and configure Kafka.
+- **Apache Spark:** Install and configure Spark.
+- **MongoDB:** Install and run MongoDB.
+- **Flask:** Install Flask for the dashboard.
 
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/abdellatif-laghjaj/hespress-comments-analysis.git
    cd hespress-comments-analysis
    ```
 
 2. Create a virtual environment (recommended):
+
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
    ```
 
 3. Install the required packages:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -91,9 +102,9 @@ hespress-comments-analysis/
    `label_encoder.pkl`) in the `model/` directory.
 
 5. **Configuration:**
-    - Update `config/kafka_config.py` with your Kafka bootstrap servers and topic information.
-    - Update `config/mongodb_config.py` with your MongoDB connection details.
-    - Update HDFS details in your `main.py` and `hdfs_handler.py`.
+   - Update `config/kafka_config.py` with your Kafka bootstrap servers and topic information.
+   - Update `config/mongodb_config.py` with your MongoDB connection details.
+   - Update HDFS details in your `main.py` and `hdfs_handler.py`.
 
 ### Running the Application
 
@@ -122,7 +133,7 @@ start-all.sh
 4. **Create Kafka Topic:** Create a Kafka topic to store the comments.
 
 ```bash
-kafka-topics.sh 
+kafka-topics.sh
   --create --topic hespress_comments \
   --bootstrap-server localhost:9092 \
   --partitions 1 --replication-factor 1
